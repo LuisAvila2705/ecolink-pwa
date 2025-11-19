@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>EcoLink — Panel de Administración</title>
+
+  <!-- Estilos del panel -->
+  <link rel="stylesheet" href="/css/Admin.css" />
+
+</head>
+<body>
+
+  <!-- Encabezado -->
+  <header class="card header-wrap">
+    <div class="header-left">
+      <img src="/assets/logo.png" alt="EcoLink" class="header-logo" />
+      <h1>Panel de Administración</h1>
+    </div>
+
+    <div class="header-right" style="display:flex;gap:8px;align-items:center;">
+
+      <!-- Navegación por rol -->
+      <a id="btnGoCitizen" href="/DashboardPrincipal.html"  class="toolbar-btn" style="display:none">Ciudadanos</a>
+      <a id="btnGoOrg"     href="/PanelOrganizaciones.html" class="toolbar-btn" style="display:none">Organizaciones</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Filtros / búsqueda -->
+    <section class="card" style="margin-bottom:14px;">
+      <div class="toolbar" role="search">
+        <label for="q" class="sr-only">Buscar por nombre o correo</label>
+        <input id="q" type="search" placeholder="Buscar (texto libre) • Soporta: rol:admin mun:garcia uid:ABC tel:81..." autocomplete="off" />
+
+        <label for="rolSel" class="sr-only">Rol</label>
+        <select id="rolSel" title="Rol">
+          <option value="">Rol: todos</option>
+          <option value="ciudadano">Ciudadano</option>
+          <option value="organizacion">Organización</option>
+          <option value="admin">Admin</option>
+        </select>
+
+        <label for="munSel" class="sr-only">Municipio</label>
+        <select id="munSel">
+          <option value="">Municipio (todos)</option>
+          <option>Abasolo</option><option>Agualeguas</option><option>Los Aldamas</option>
+          <option>Allende</option><option>Anáhuac</option><option>Apodaca</option>
+          <option>Aramberri</option><option>Bustamante</option><option>Cadereyta Jiménez</option>
+          <option>El Carmen</option><option>Cerralvo</option><option>China</option>
+          <option>Ciénega de Flores</option><option>Doctor Arroyo</option><option>Doctor Coss</option>
+          <option>Doctor González</option><option>Galeana</option><option>García</option>
+          <option>San Pedro Garza García</option><option>General Bravo</option><option>General Escobedo</option>
+          <option>General Terán</option><option>General Treviño</option><option>General Zaragoza</option>
+          <option>General Zuazua</option><option>Guadalupe</option><option>Los Herreras</option>
+          <option>Higueras</option><option>Hidalgo</option><option>Hualahuises</option>
+          <option>Iturbide</option><option>Juárez</option><option>Lampazos de Naranjo</option>
+          <option>Linares</option><option>Marín</option><option>Melchor Ocampo</option>
+          <option>Mier y Noriega</option><option>Mina</option><option>Montemorelos</option>
+          <option>Monterrey</option><option>Parás</option><option>Pesquería</option>
+          <option>Los Ramones</option><option>Rayones</option><option>Sabinas Hidalgo</option>
+          <option>Salinas Victoria</option><option>San Nicolás de los Garza</option>
+          <option>Santa Catarina</option><option>Santiago</option><option>Vallecillo</option><option>Villaldama</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- Tabla de usuarios (con mejoras) -->
+    <section class="card" aria-labelledby="titulo-usuarios">
+      <h2 id="titulo-usuarios" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <span>Usuarios</span>
+        <span id="kpis" class="muted" style="font-weight:600;">
+          <span id="kpiTotal">—</span> totales · 
+          <span id="kpiCit">—</span> ciudadanos · 
+          <span id="kpiOrg">—</span> orgs · 
+          <span id="kpiAdm">—</span> admins
+        </span>
+      </h2>
+
+      <div class="sub-actions">
+  <button id="exportCsv"  type="button" class="sub-btn">Exportar CSV</button>
+</div>
+
+
+<p id="stats"></p>
+
+
+      <div class="table-wrap" role="region" aria-live="polite" aria-busy="false">
+        <table id="tbl" aria-label="Usuarios">
+  <thead>
+    <tr>
+      <th scope="col">Usuario</th>
+      <th scope="col" class="col-mun">Municipio</th>
+      <th scope="col">Rol</th>
+      <th scope="col" class="col-estado">Estado</th>
+      <th scope="col" class="col-ult">Últ. conexión</th>
+      <th scope="col" style="width:1%">Acciones</th>
+    </tr>
+  </thead>
+  <tbody id="tblUsers"></tbody>
+</table>
+
+
+<!-- Debajo del título “Usuarios” (opcional) muestra stats -->
+<p id="stats"></p>
+
+      </div>
+
+      <!-- Paginador inferior -->
+      <div class="pager">
+        <button id="btnPrev" disabled>◀ Anterior</button>
+        <button id="btnNext" disabled>Siguiente ▶</button>
+      </div>
+    </section>
+
+    <!-- Notas -->
+    <section class="card" style="margin-top:14px;">
+      <h2>Notas</h2>
+      <ul class="muted">
+        <li>Al cambiar el <strong>rol</strong> se actualiza <code>/usuarios/{uid}.rol</code>. Tu app ya usa ese valor (guard en UI).</li>
+        <li>La búsqueda avanzada admite: <code>rol:</code>, <code>mun:</code>, <code>uid:</code>, <code>tel:</code> + texto libre.</li>
+      </ul>
+    </section>
+  </main>
+
+  <!-- Toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- ========= MODAL: Publicaciones del usuario ========= -->
+  <div id="postsModal" class="modal oculto" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="postsTitle">
+      <div class="modal-header">
+        <h3 id="postsTitle">Publicaciones</h3>
+        <button id="postsClose" class="modal-close" aria-label="Cerrar">✕</button>
+      </div>
+      <div id="postsList" style="display:grid;gap:10px;max-height:60vh;overflow:auto;"></div>
+    </div>
+  </div>
+  <!-- ========= /MODAL ========= -->
+
+
+  <!-- Script de navegación por rol (muestra/oculta botones de cabecera según rol del usuario) -->
+  <script type="module" src="/js/roleNav.js"></script>
+
+  <!-- Lógica del panel (versión con mejoras) -->
+  <script type="module" src="/js/adminPanel.js"></script>
+</body>
+</html>

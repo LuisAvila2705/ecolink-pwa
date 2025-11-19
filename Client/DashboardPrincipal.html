@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#177e69" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EcoLink - Inicio de ciudadano</title>
+  <link rel="stylesheet" href="/css/DashboardPrincipal.css" />
+</head>
+
+
+
+<body>
+  <!-- ========= NAVBAR ========= -->
+<header class="navbar">
+  <div class="navbar-left">
+    <img src="/assets/logo.png" alt="EcoLink logo" class="logo-img" />
+    <span class="app-title">EcoLink</span>
+  </div>
+
+  <div class="navbar-right" style="display:flex;gap:8px;align-items:center;">
+    <!-- Botones por rol -->
+    <a id="btnGoOrg"   href="/PanelOrganizaciones.html" class="toolbar-btn" style="display:none">Organizaciones</a>
+    <a id="btnGoAdmin" href="/admin.html"                 class="toolbar-btn" style="display:none">Admin</a>
+
+    <!-- Menú usuario -->
+    <button class="user-menu-btn" onclick="toggleMenu()">☰</button>
+    <div class="user-dropdown oculto" id="userDropdown">
+      <button type="button" id="btnOpenPerfil" class="dropdown-item">Actualizar datos</button>
+      <a href="#" id="logoutLink">Cerrar sesión</a>
+    </div>
+  </div>
+</header>
+
+<!-- Banner de conectividad -->
+<div id="netBanner" class="net-banner oculto" role="status" aria-live="polite">
+  Sin conexión. Tus publicaciones se enviarán al reconectar.
+</div>
+
+<!-- Toasts -->
+<div id="queueToast" class="toast oculto" role="status" aria-live="polite">
+  Publicación guardada offline. Se subirá al reconectar.
+</div>
+<div id="syncToast" class="toast oculto" role="status" aria-live="polite">
+  Listo: se enviaron tus publicaciones pendientes.
+</div>
+
+  <!-- ========= MODAL: PERFIL ========= -->
+  <div id="perfilModal" class="perfil-modal oculto" aria-hidden="true">
+    <div class="perfil-modal__content" role="dialog" aria-modal="true" aria-labelledby="perfilTitle">
+      <h2 id="perfilTitle">Mis datos</h2>
+
+      <p id="perfilMsg" class="perfil-msg oculto"></p>
+
+      <div class="perfil-section">
+        <h3>Datos básicos</h3>
+
+        <label class="perfil-field">
+          <span>Nombre</span>
+          <input type="text" id="perfilNombre" placeholder="Tu nombre" autocomplete="name" />
+        </label>
+
+        <label class="perfil-field">
+          <span>Correo</span>
+          <input type="email" id="perfilCorreo" disabled />
+          <small>El correo no se puede cambiar desde aquí.</small>
+        </label>
+
+        <label class="perfil-field">
+          <span>Municipio / Ciudad</span>
+          <select id="perfilCiudad">
+            <option value="">Selecciona…</option>
+            <option>Abasolo</option><option>Agualeguas</option><option>Los Aldamas</option>
+            <option>Allende</option><option>Anáhuac</option><option>Apodaca</option>
+            <option>Aramberri</option><option>Bustamante</option><option>Cadereyta Jiménez</option>
+            <option>El Carmen</option><option>Cerralvo</option><option>China</option>
+            <option>Ciénega de Flores</option><option>Doctor Arroyo</option><option>Doctor Coss</option>
+            <option>Doctor González</option><option>Galeana</option><option>García</option>
+            <option>San Pedro Garza García</option><option>General Bravo</option><option>General Escobedo</option>
+            <option>General Terán</option><option>General Treviño</option><option>General Zaragoza</option>
+            <option>General Zuazua</option><option>Guadalupe</option><option>Los Herreras</option>
+            <option>Higueras</option><option>Hidalgo</option><option>Hualahuises</option>
+            <option>Iturbide</option><option>Juárez</option><option>Lampazos de Naranjo</option>
+            <option>Linares</option><option>Marín</option><option>Melchor Ocampo</option>
+            <option>Mier y Noriega</option><option>Mina</option><option>Montemorelos</option>
+            <option>Monterrey</option><option>Parás</option><option>Pesquería</option>
+            <option>Los Ramones</option><option>Rayones</option><option>Sabinas Hidalgo</option>
+            <option>Salinas Victoria</option><option>San Nicolás de los Garza</option>
+            <option>Santa Catarina</option><option>Santiago</option><option>Vallecillo</option><option>Villaldama</option>
+          </select>
+        </label>
+
+        <label class="perfil-field">
+          <span>Teléfono</span>
+          <input type="tel" id="perfilTelefono" placeholder="8123456789" autocomplete="tel" />
+        </label>
+      </div>
+
+      <div class="perfil-section perfil-section--security">
+        <h3>Seguridad</h3>
+        <p class="help-text">Puedes cambiar la contraseña si iniciaste con email y contraseña.</p>
+
+        <form id="perfilPassForm" onsubmit="return false;">
+          <input type="text" autocomplete="username" name="username" 
+                 value="" style="position:absolute; left:-9999px; width:1px; height:1px; opacity:0;" tabindex="-1" aria-hidden="true">
+
+          <label>Contraseña actual
+            <input type="password" id="perfilPassActual" autocomplete="current-password">
+          </label>
+          <label>Nueva contraseña
+            <input type="password" id="perfilPassNueva" autocomplete="new-password">
+          </label>
+          <label>Confirmar nueva contraseña
+            <input type="password" id="perfilPassConfirm" autocomplete="new-password">
+          </label>
+          <button id="perfilPassBtn" type="button" class="btn-primary">Cambiar contraseña</button>
+        </form>
+
+        <p id="perfilPassMsg" class="perfil-msg oculto"></p>
+      </div>
+
+      <div class="perfil-modal__actions">
+        <button id="perfilCancelar" type="button" class="btn-light">Cancelar</button>
+        <button id="perfilGuardar" type="button" class="btn-primary">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========= MODAL CONFIRM ========= -->
+  <div id="confirmModal" class="confirm-modal oculto" aria-hidden="true">
+    <div class="confirm-modal__content" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+      <h3 id="confirmTitle">Eliminar publicación</h3>
+      <p id="confirmText">Esta acción no se puede deshacer.</p>
+      <div class="confirm-modal__actions">
+        <button type="button" id="confirmCancel" class="btn-light">Cancelar</button>
+        <button type="button" id="confirmOk" class="btn-danger">Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========= MODAL EDITAR ========= -->
+  <div id="editModal" class="confirm-modal oculto" aria-hidden="true">
+    <div class="confirm-modal__content" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+      <h3 id="editTitle">Editar publicación</h3>
+
+      <form id="editForm" onsubmit="return false;" style="display:grid; gap:12px; margin-top:8px;">
+        <label>Descripción
+          <textarea id="editDesc" maxlength="500" placeholder="Actualiza la descripción…" required></textarea>
+        </label>
+
+        <label>Categoría
+          <select id="editCat">
+            <option value="limpieza">Limpieza</option>
+            <option value="reciclaje">Reciclaje</option>
+            <option value="taller">Taller</option>
+            <option value="donacion">Donación</option>
+          </select>
+        </label>
+
+        <label>Zona / Ciudad
+          <input id="editZona" type="text" placeholder="Zona o ciudad (opcional)">
+        </label>
+
+        <div>
+          <input class="input-file" type="file" id="editFiles" accept="image/*" multiple />
+          <label for="editFiles" class="fake">Elegir nuevas imágenes (opcional)</label>
+          <small class="hint">Si no eliges archivos, se conservan las imágenes actuales.</small>
+          <div id="editPreview" class="preview"></div>
+        </div>
+      </form>
+
+      <p id="editMsg" class="perfil-msg oculto"></p>
+
+      <div class="confirm-modal__actions" style="margin-top:6px;">
+        <button type="button" id="editCancel" class="btn-light">Cancelar</button>
+        <button type="button" id="editSave" class="btn-primary">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========= CONTENIDO ========= -->
+  <div class="dashboard-panel">
+    <div class="perfil-paciente">
+      <div>
+        <h2>Estas de vuelta, <span id="nombrePaciente">Usuario</span>!</h2>
+        <p class="subtitulo">Alegra al mundo con tu ayuda....</p>
+      </div>
+    </div>
+
+    <!-- Composer mini -->
+    <section class="composer-mini card" id="composerMini">
+      <img class="avatar" id="miniAvatar" alt="avatar" />
+      <button class="open-composer" id="openComposer">
+        Comparte tu acción a la sociedad, <span id="nombreCorto">Usuario</span>
+      </button>
+      <div class="mini-actions">
+        <button class="mini-btn" id="miniFoto">Foto/Video</button>
+      </div>
+    </section>
+
+    <!-- Modal publicar -->
+    <div class="modal oculto" id="composerModal" aria-hidden="true">
+      <div class="modal-backdrop" id="modalBackdrop"></div>
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="composerTitle">
+        <div class="modal-header">
+          <h3 id="composerTitle">Crear publicación</h3>
+          <div class="user-meta">
+            <img id="modalAvatar" class="avatar" src="/assets/fak.PNG" alt="avatar del usuario" />
+            <div class="who">
+              <strong id="nombreCortoModal">Usuario</strong>
+              <div class="subtitulo">Listo para compartir</div>
+            </div>
+          </div>
+          <button class="modal-close" id="closeComposer" aria-label="Cerrar">✕</button>
+        </div>
+
+        <section class="composer">
+          <div class="form-row">
+            <textarea id="desc" maxlength="500" placeholder="Describe tu acción…" required></textarea>
+            <select id="categoria" aria-label="Categoría">
+              <option value="limpieza">Limpieza</option>
+              <option value="reciclaje">Reciclaje</option>
+              <option value="taller">Taller</option>
+              <option value="donacion">Donación</option>
+            </select>
+            <input type="text" id="zona" placeholder="Zona o ciudad (opcional)" />
+          </div>
+
+          <div class="file">
+            <input class="input-file" type="file" id="files" accept="image/*" multiple />
+            <label for="files" class="fake">Elegir imágenes</label>
+            <span class="hint" id="hintFiles">Hasta 4 imágenes (JPG/PNG/WEBP)</span>
+            <span class="hint" id="charCount">0/500</span>
+          </div>
+
+          <div id="preview" class="preview"></div>
+
+          <div style="margin-top:10px;display:flex;gap:10px;justify-content:flex-end">
+            <button id="btnPublicar" class="btn">Publicar</button>
+          </div>
+          <p id="pubMsg"></p>
+        </section>
+      </div>
+    </div>
+
+    <!-- Filtros -->
+    <section class="feed-toolbar card" style="display:flex;gap:10px;align-items:center;justify-content:space-between;margin:16px 0;">
+      <div style="display:flex;gap:8px;align-items:center;">
+        <label style="font-weight:600;">Categoría:</label>
+        <select id="categorySelect">
+          <option value="todas">Todas</option>
+          <option value="limpieza">Limpieza</option>
+          <option value="reciclaje">Reciclaje</option>
+          <option value="taller">Taller</option>
+          <option value="donacion">Donación</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input id="searchInput" type="search" placeholder="Buscar por nombre o descripción" style="min-width:220px;">
+      </div>
+    </section>
+
+    <!-- Feed -->
+    <section id="feed" class="feed"></section>
+  </div>
+
+  <!-- Pie -->
+  <section class="contacto">
+    <div class="contenedor-contacto">
+      <div class="info-contacto">
+        <h2>Contáctanos</h2>
+        <p>UTSC, Santa Catarina, Nuevo León</p>
+        <p>(52) 81 1234 5678</p>
+        <p>Siempre para ti</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="logout-alert" class="logout-alert oculto" role="status" aria-live="polite">
+    Sesión cerrada correctamente.
+  </div>
+
+  <!-- Botones por rol -->
+  <script type="module" src="/js/roleNav.js"></script>
+
+  <!-- Service Worker -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/serviceWorker.js')
+          .then(reg => console.log('SW registrado', reg.scope))
+          .catch(err => console.error('Error SW', err));
+      });
+    }
+  </script>
+
+<!-- ========= LÓGICA ========= -->
+<script type="module">
+/* ===== Imports ===== */
+import { auth, db, authReady } from "/js/firebase.js";
+import { uploadImages } from "/js/uploaderCloudinary.js";
+import {
+  addDoc, collection, serverTimestamp, doc, getDoc, setDoc, updateDoc,
+  query, orderBy, limit, onSnapshot, getCountFromServer, deleteDoc,
+  where, getDocs, writeBatch, startAfter
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  onAuthStateChanged, signOut, updateProfile,
+  EmailAuthProvider, reauthenticateWithCredential,
+  updatePassword, sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { queueOutbox, flushOutbox } from "/js/idb.js";
+
+/* ===== Refs ===== */
+const $ = (s) => document.querySelector(s);
+
+/* Navbar / user menu */
+const spanNombre   = $("#nombrePaciente");
+const userDropdown = $("#userDropdown");
+const logoutAlert  = $("#logout-alert");
+const logoutLink   = $("#logoutLink");
+window.toggleMenu  = () => userDropdown?.classList.toggle("oculto");
+
+/* Composer / publicar */
+const openComposer = $("#openComposer");
+const miniFoto     = $("#miniFoto");
+const modalPub     = $("#composerModal");
+const backdropPub  = $("#modalBackdrop");
+const closePubBtn  = $("#closeComposer");
+const btnPublicar  = $("#btnPublicar");
+const msgPublicar  = $("#pubMsg");
+const descEl       = $("#desc");
+const catEl        = $("#categoria");
+const zonaEl       = $("#zona");
+const fileInput    = $("#files");
+const preview      = $("#preview");
+const hintFiles    = $("#hintFiles");
+const charCount    = $("#charCount");
+
+/* Feed */
+const feedEl           = $("#feed");
+const categorySelect   = $("#categorySelect");
+const searchInput      = $("#searchInput");
+const miniAvatar       = $("#miniAvatar");
+const nombreCorto      = $("#nombreCorto");
+const nombreCortoModal = $("#nombreCortoModal");
+const modalAvatar      = $("#modalAvatar");
+
+/* Perfil modal */
+const btnOpenPerfil   = $("#btnOpenPerfil");
+const perfilModal     = $("#perfilModal");
+const perfilNombre    = $("#perfilNombre");
+const perfilCorreo    = $("#perfilCorreo");
+const perfilCiudad    = $("#perfilCiudad");
+const perfilTelefono  = $("#perfilTelefono");
+const btnPerfilCancel = $("#perfilCancelar");
+const btnPerfilSave   = $("#perfilGuardar");
+const perfilMsg       = $("#perfilMsg");
+const passActualEl    = $("#perfilPassActual");
+const passNuevaEl     = $("#perfilPassNueva");
+const passConfirmEl   = $("#perfilPassConfirm");
+const passBtn         = $("#perfilPassBtn");
+const passMsg         = $("#perfilPassMsg");
+
+/* Confirm modal (genérico) */
+const confirmModal   = $("#confirmModal");
+const confirmCancel  = $("#confirmCancel");
+const confirmOk      = $("#confirmOk");
+const confirmTitleEl = $("#confirmTitle");
+const confirmTextEl  = $("#confirmText");
+
+/* Edit modal */
+const editModal   = $("#editModal");
+const editForm    = $("#editForm");
+const editDesc    = $("#editDesc");
+const editCat     = $("#editCat");
+const editZona    = $("#editZona");
+const editFiles   = $("#editFiles");
+const editPreview = $("#editPreview");
+const editMsg     = $("#editMsg");
+const editCancel  = $("#editCancel");
+const editSave    = $("#editSave");
+
+/* ===== Estado ===== */
+const stripAccents = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const norm = (s) => stripAccents(String(s || "").toLowerCase().trim());
+let FEED_CACHE = [];
+let stopFeed = null;
+let isLoggingOut = false;
+let EDITING_ID = null;
+let EDITING_ORIG_MEDIA = [];
+let IS_ADMIN = false;
+let CURRENT_UID = null;
+
+/* ===== Banner de red ===== */
+let netBanner = document.getElementById("netBanner");
+if (!netBanner) {
+  netBanner = document.createElement("div");
+  netBanner.id = "netBanner";
+  netBanner.className = "net-banner oculto";
+  netBanner.textContent = "Sin conexión. Las publicaciones se enviarán al reconectar.";
+  document.body.appendChild(netBanner);
+}
+function showNet(on) {
+  if (!netBanner) return;
+  if (on) netBanner.classList.remove("oculto");
+  else netBanner.classList.add("oculto");
+}
+
+/* ===== Conectividad & flush ===== */
+async function hasConnectivity() {
+  try {
+    await fetch("/manifest.json?ts=" + Date.now(), { method: "HEAD", cache: "no-store" });
+    return true;
+  } catch {
+    return navigator.onLine;
+  }
+}
+async function tryFlush(reason="auto") {
+  if (!(await hasConnectivity())) { showNet(true); return; }
+  showNet(false);
+  try {
+    const n = await flushOutbox();
+    if (n > 0) {
+      console.log(`[Outbox] ${n} publicación(es) subidas (${reason}).`);
+      toast("Tus publicaciones offline ya están en línea ✅");
+    }
+  } catch(e) {
+    console.error("flushOutbox error:", e);
+  }
+}
+window.addEventListener("online",  () => { showNet(false); tryFlush("online"); });
+window.addEventListener("offline", () => showNet(true));
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") tryFlush("visible");
+});
+
+/* ===== Toast (reuso logout-alert) ===== */
+function toast(text) {
+  const el = logoutAlert || (() => {
+    const d = document.createElement("div");
+    d.id = "logout-alert";
+    d.className = "logout-alert";
+    document.body.appendChild(d);
+    return d;
+  })();
+  el.textContent = text;
+  el.classList.remove("oculto");
+  requestAnimationFrame(() => el.classList.add("visible"));
+  setTimeout(() => {
+    el.classList.remove("visible");
+    setTimeout(()=> el.classList.add("oculto"), 350);
+  }, 2200);
+}
+
+/* ===== Caché de autores ===== */
+const AUTHOR_CACHE = new Map(); // uid -> { nombre, fotoPerfil }
+async function fetchAuthor(uid){
+  if (!uid) return null;
+  if (AUTHOR_CACHE.has(uid)) return AUTHOR_CACHE.get(uid);
+  try{
+    const s = await getDoc(doc(db, "usuarios", uid));
+    if (s.exists()) {
+      const data = s.data();
+      const val = { nombre: data.nombre || "Usuario", fotoPerfil: data.fotoPerfil || null };
+      AUTHOR_CACHE.set(uid, val);
+      return val;
+    }
+    return null;
+  }catch{ return null; }
+}
+function avatarForPost(p){
+  const cached = AUTHOR_CACHE.get(p.autorUid);
+  return (cached?.fotoPerfil) || p.autorFoto || "/assets/fak.PNG";
+}
+function updateAvatarsInDOM(uid){
+  if (!uid) return;
+  const cached = AUTHOR_CACHE.get(uid);
+  if (!cached?.fotoPerfil) return;
+  document.querySelectorAll(`img.avatar[data-autor-uid="${uid}"]`)
+    .forEach(img => { img.src = cached.fotoPerfil; });
+}
+
+/* ===== Cloudinary helpers + reachability (no 404 en consola) ===== */
+const CLOUD_NAME = "dxlfgnxa3"; // tu cloud_name
+
+function cldUrl(publicId, opts = {}) {
+  const {
+    w = 1100, h = 700,
+    crop = "fill", gravity = "auto",
+    quality = "auto", format = "auto",
+  } = opts;
+  const t = `f_${format},q_${quality},c_${crop},g_${gravity},w_${w},h_${h}/`;
+  return `https://res.cloudinary.com/${CLOUD_NAME}/image/upload/${t}${publicId}`;
+}
+function getPublicIdFromMedia(m) {
+  if (!m) return null;
+  if (m.public_id) return m.public_id;
+  if (m.url) {
+    const rx = /\/upload\/(?:v\d+\/)?([^.?]+)(?:\.[a-z0-9]+)?$/i;
+    const mt = m.url.match(rx);
+    if (mt && mt[1]) return mt[1];
+  }
+  return null;
+}
+const IMG_OK_CACHE = new Map(); // url -> boolean
+async function isReachable(url, ms = 3000) {
+  if (IMG_OK_CACHE.has(url)) return IMG_OK_CACHE.get(url);
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try {
+    const res = await fetch(url, { method: "HEAD", signal: ctrl.signal, cache: "no-store" });
+    const ok = !!res.ok;
+    IMG_OK_CACHE.set(url, ok);
+    return ok;
+  } catch {
+    IMG_OK_CACHE.set(url, false);
+    return false;
+  } finally {
+    clearTimeout(t);
+  }
+}
+async function resolveImageUrl(media) {
+  const pid = getPublicIdFromMedia(media);
+  if (pid) {
+    const url = cldUrl(pid, { w: 1100, h: 700 });
+    if (await isReachable(url)) return url;
+  }
+  if (media?.url && await isReachable(media.url)) return media.url;
+  return null;
+}
+async function setImageForPost(imgEl, media) {
+  if (!imgEl) return;
+  const okUrl = await resolveImageUrl(media);
+  imgEl.src = okUrl || "/assets/logo.png";
+}
+
+/* ===== UI helpers (modales) ===== */
+function showConfirm({ title="¿Estás seguro?", text="" } = {}) {
+  if (!confirmModal || !confirmCancel || !confirmOk) {
+    return Promise.resolve(window.confirm(`${title}\n\n${text}`));
+  }
+  return new Promise((resolve) => {
+    confirmTitleEl.textContent = title;
+    confirmTextEl.textContent  = text;
+    confirmModal.classList.remove("oculto");
+    confirmModal.setAttribute("aria-hidden","false");
+
+    const onCancel = () => { cleanup(); resolve(false); };
+    const onOk     = () => { cleanup(); resolve(true); };
+    const onBack   = (e) => { if (e.target===confirmModal) { cleanup(); resolve(false); } };
+
+    function cleanup(){
+      confirmModal.classList.add("oculto");
+      confirmModal.setAttribute("aria-hidden","true");
+      confirmCancel.removeEventListener("click", onCancel);
+      confirmOk.removeEventListener("click", onOk);
+      confirmModal.removeEventListener("click", onBack);
+    }
+    confirmCancel.addEventListener("click", onCancel);
+    confirmOk.addEventListener("click", onOk);
+    confirmModal.addEventListener("click", onBack);
+  });
+}
+function openPublishModal(){ modalPub?.classList.remove("oculto"); modalPub?.setAttribute("aria-hidden","false"); setTimeout(()=>descEl?.focus(),50); }
+function closePublishModal(){ modalPub?.classList.add("oculto"); modalPub?.setAttribute("aria-hidden","true"); }
+
+openComposer?.addEventListener("click", openPublishModal);
+miniFoto?.addEventListener("click", openPublishModal);
+closePubBtn?.addEventListener("click", closePublishModal);
+backdropPub?.addEventListener("click", closePublishModal);
+window.addEventListener("keydown", (e)=>{ if (e.key==="Escape" && !modalPub?.classList.contains("oculto")) closePublishModal(); });
+
+/* ===== Perfil modal ===== */
+function ensurePerfilPhotoControls() {
+  let input = document.getElementById("perfilFotoInput");
+  let preview = document.getElementById("perfilFotoPreview");
+  if (input && preview) return { input, preview };
+
+  const section = perfilModal?.querySelector(".perfil-section");
+  if (!section) return { input: null, preview: null };
+
+  const wrap = document.createElement("div");
+  wrap.className = "perfil-field";
+  wrap.innerHTML = `
+    <span>Foto de perfil</span>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <img id="perfilFotoPreview" alt="Preview foto" style="width:64px;height:64px;border-radius:50%;object-fit:cover;border:1px solid #ddd;">
+      <input type="file" id="perfilFotoInput" accept="image/*">
+    </div>
+    <small>Peso sugerido &lt; 2MB. Se reflejará también en publicaciones pasadas.</small>
+  `;
+  section.insertBefore(wrap, section.firstChild);
+
+  input = wrap.querySelector("#perfilFotoInput");
+  preview = wrap.querySelector("#perfilFotoPreview");
+  return { input, preview };
+}
+function openPerfilModal(){ 
+  perfilModal?.classList.remove("oculto"); 
+  perfilModal?.setAttribute("aria-hidden","false"); 
+}
+function closePerfilModal(){
+  perfilModal?.classList.add("oculto");
+  perfilModal?.setAttribute("aria-hidden","true");
+  if (perfilMsg){ perfilMsg.classList.add("oculto"); perfilMsg.classList.remove("error"); perfilMsg.textContent=""; }
+  if (passMsg)  { passMsg.classList.add("oculto");  passMsg.classList.remove("error");  passMsg.textContent=""; }
+  if (passActualEl) passActualEl.value = "";
+  if (passNuevaEl)  passNuevaEl.value  = "";
+  if (passConfirmEl) passConfirmEl.value = "";
+}
+btnOpenPerfil?.addEventListener("click", async ()=>{
+  userDropdown?.classList.add("oculto");
+  const user = auth.currentUser;
+  const { input, preview } = ensurePerfilPhotoControls();
+
+  if (user){
+    const s = await getDoc(doc(db,"usuarios",user.uid));
+    const data = s.exists() ? s.data() : {};
+    if (perfilNombre)   perfilNombre.value = data.nombre || user.displayName || "";
+    if (perfilCorreo)   perfilCorreo.value = user.email || "";
+    if (perfilCiudad)   perfilCiudad.value = data.ciudad || "";
+    if (perfilTelefono) perfilTelefono.value = data.telefono || "";
+    if (preview) preview.src = data.fotoPerfil || user.photoURL || "/assets/fak.PNG";
+  }
+  const inputNow = document.getElementById("perfilFotoInput");
+  const previewNow = document.getElementById("perfilFotoPreview");
+  inputNow?.addEventListener("change", ()=>{
+    const f = inputNow.files?.[0];
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    if (previewNow) previewNow.src = url;
+  }, { once: true });
+
+  openPerfilModal();
+});
+btnPerfilCancel?.addEventListener("click", closePerfilModal);
+perfilModal?.addEventListener("click", (e)=>{ if (e.target===perfilModal) closePerfilModal(); });
+
+/* ===== Firestore: user doc ===== */
+async function ensureUserDoc(user){
+  if (!user || !user.uid) throw new Error("ensureUserDoc: usuario/uid inválido");
+  const ref = doc(db, "usuarios", user.uid);
+  const snap = await getDoc(ref);
+  if (!snap.exists()){
+    await setDoc(ref, {
+      uid: user.uid,
+      email: (user.email || "").toLowerCase(),
+      nombre: user.displayName || "Usuario",
+      rol: "ciudadano",
+      organizacion: null,
+      telefono: null,
+      ciudad: null,
+      fotoPerfil: null,
+      creadoEl: serverTimestamp(),
+      ultimaConexion: serverTimestamp(),
+      estadoCuenta: "activo",
+      actualizadoEl: serverTimestamp()
+    });
+    return (await getDoc(ref)).data();
+  } else {
+    await updateDoc(ref, { ultimaConexion: serverTimestamp() });
+    return snap.data();
+  }
+}
+
+/* ===== Propagación a publicaciones históricas ===== */
+async function propagateAuthorFieldsOnPosts(uid, nuevoNombre, nuevaFoto){
+  const PAGE = 200;
+  let cursor = null;
+  let total = 0;
+
+  while (true) {
+    let qRef = query(
+      collection(db, "acciones"),
+      where("autorUid", "==", uid),
+      orderBy("creadoEl", "desc"),
+      limit(PAGE)
+    );
+    if (cursor) qRef = query(
+      collection(db, "acciones"),
+      where("autorUid", "==", uid),
+      orderBy("creadoEl", "desc"),
+      startAfter(cursor),
+      limit(PAGE)
+    );
+
+    const snap = await getDocs(qRef);
+    if (snap.empty) break;
+
+    const batch = writeBatch(db);
+    snap.docs.forEach(d => {
+      batch.update(d.ref, {
+        autorNombre: nuevoNombre,
+        autorFoto: nuevaFoto ?? null,
+        actualizadoEl: serverTimestamp()
+      });
+    });
+    await batch.commit();
+
+    total += snap.size;
+    cursor = snap.docs[snap.docs.length - 1];
+    if (snap.size < PAGE) break;
+  }
+  return total;
+}
+
+/* ===== Boot ===== */
+authReady.finally(() => {
+  onAuthStateChanged(auth, async (user) => {
+    if (!user){
+      if (isLoggingOut && logoutAlert){
+        toast("Sesión cerrada correctamente.");
+        setTimeout(()=> window.location.href="/login.html", 800);
+      } else {
+        window.location.href="/login.html";
+      }
+      return;
+    }
+
+    try{
+      CURRENT_UID = user.uid;
+      const perfil = await ensureUserDoc(user);
+
+      const nombre = perfil?.nombre || user.displayName || user.email || "Usuario";
+      const avatar = perfil?.fotoPerfil || user.photoURL || "/assets/fak.PNG";
+      IS_ADMIN = (perfil?.rol || "").toLowerCase() === "admin";
+
+      if (spanNombre) spanNombre.textContent = nombre;
+      if (nombreCorto) nombreCorto.textContent = nombre;
+      if (nombreCortoModal) nombreCortoModal.textContent = nombre;
+      if (miniAvatar) { miniAvatar.src = avatar; miniAvatar.alt = `Avatar de ${nombre}`; }
+      if (modalAvatar) { modalAvatar.src = avatar; modalAvatar.alt = `Avatar de ${nombre}`; }
+
+      if (perfilCorreo)  perfilCorreo.value  = user.email || "";
+      if (perfilNombre)  perfilNombre.value  = nombre;
+      if (perfilCiudad)  perfilCiudad.value  = perfil?.ciudad || "";
+      if (perfilTelefono)perfilTelefono.value= perfil?.telefono || "";
+
+      AUTHOR_CACHE.set(user.uid, { nombre, fotoPerfil: perfil?.fotoPerfil || user.photoURL || null });
+
+      showSkeletons();
+      startFeedListener();
+
+      if (!(await hasConnectivity())) showNet(true);
+      await tryFlush("boot");
+    } catch(e){
+      console.error("[boot] Error cargando perfil:", e?.code, e?.message);
+      window.location.href="/login.html";
+    }
+  });
+});
+
+/* ===== Logout ===== */
+logoutLink?.addEventListener("click", async (e)=>{
+  e.preventDefault();
+  try { isLoggingOut = true; await signOut(auth); localStorage.removeItem("idToken"); }
+  catch(err){ console.error("Error al cerrar sesión", err); alert("No se pudo cerrar sesión."); }
+});
+
+/* ===== Publicar (offline con cola) ===== */
+btnPublicar?.addEventListener("click", async () => {
+  msgPublicar?.classList.remove("error");
+  if (msgPublicar) msgPublicar.textContent = "";
+  btnPublicar.disabled = true; btnPublicar.textContent = "Publicando...";
+
+  try {
+    const user = auth.currentUser;
+    if (!user){ msgPublicar.textContent = "Inicia sesión."; return; }
+
+    const descripcion = (descEl?.value || "").trim();
+    const categoria   = norm(catEl?.value || "limpieza");
+    const zona        = (zonaEl?.value || "").trim();
+    if (!descripcion){ msgPublicar.textContent = "Escribe una descripción."; return; }
+
+    const autorNombreAuth = user.displayName || "Usuario";
+    const autorFotoAuth   = user.photoURL || null;
+    const filesArr = Array.from(fileInput?.files || []).slice(0,4);
+
+    if (!(await hasConnectivity())) {
+      await queueOutbox({
+        autorUid: user.uid,
+        autorNombre: autorNombreAuth,
+        autorFoto: autorFotoAuth,
+        descripcion,
+        categoria,
+        zona: zona || null,
+        media: [],
+        createdAt: Date.now()
+      }, filesArr);
+
+      msgPublicar.textContent = `Sin conexión: se guardó y se publicará al reconectar${filesArr.length ? ` (incluye ${filesArr.length} imagen${filesArr.length>1?'es':''})` : ""}.`;
+      showNet(true);
+      clearComposer(); closePublishModal();
+      return;
+    }
+
+    // ONLINE
+    let autorNombre = autorNombreAuth;
+    let autorFoto   = autorFotoAuth;
+    try {
+      const snapPerfil = await getDoc(doc(db, "usuarios", user.uid));
+      if (snapPerfil.exists()) {
+        const p = snapPerfil.data();
+        autorNombre = p?.nombre || autorNombreAuth;
+        autorFoto   = p?.fotoPerfil ?? autorFotoAuth;
+      }
+    } catch {}
+
+    const media = await uploadImages(filesArr); // ahora devuelve { url, public_id, ... }
+    await addDoc(collection(db,"acciones"), {
+      autorUid: user.uid, autorNombre, autorFoto,
+      descripcion, categoria, media, zona: zona || null,
+      validado: false, comentariosCount: 0,
+      creadoEl: serverTimestamp(), actualizadoEl: serverTimestamp()
+    });
+
+    msgPublicar.textContent = "Acción publicada.";
+    clearComposer(); closePublishModal();
+  } catch (err) {
+    console.error("publish error:", err);
+    const code = String(err?.code || "");
+    if (!navigator.onLine || code.includes("unavailable") || code.includes("network")) {
+      const user = auth.currentUser;
+      if (user) {
+        const filesArr = Array.from(fileInput?.files || []).slice(0,4);
+        await queueOutbox({
+          autorUid: user.uid,
+          autorNombre: user.displayName || "Usuario",
+          autorFoto: user.photoURL || null,
+          descripcion: (descEl?.value || "").trim(),
+          categoria:   norm(catEl?.value || "limpieza"),
+          zona:        (zonaEl?.value || "").trim() || null,
+          media: [],
+          createdAt: Date.now()
+        }, filesArr);
+        msgPublicar.textContent = "Sin conexión: se guardó y se publicará al reconectar.";
+        showNet(true);
+        closePublishModal(); clearComposer();
+        return;
+      }
+    }
+    msgPublicar.textContent = "No se pudo publicar."; msgPublicar.classList.add("error");
+  } finally {
+    btnPublicar.disabled = false; btnPublicar.textContent = "Publicar";
+  }
+});
+function clearComposer(){
+  if (descEl) descEl.value = "";
+  if (zonaEl) zonaEl.value = "";
+  if (fileInput) fileInput.value = "";
+  if (preview) preview.innerHTML = "";
+  if (hintFiles) { hintFiles.textContent = "Hasta 4 imágenes (JPG/PNG/WEBP)"; hintFiles.style.color = ""; }
+  if (charCount) charCount.textContent = "0/500";
+}
+
+/* ===== Cambiar perfil ===== */
+btnPerfilSave?.addEventListener("click", async ()=>{
+  const user = auth.currentUser; if (!user) return;
+
+  const nombre = (perfilNombre?.value || "").trim() || (user.displayName || "Usuario");
+  const ciudad = (perfilCiudad?.value || "").trim() || null;
+  const tel    = (perfilTelefono?.value || "").trim() || null;
+
+  const fotoInput = document.getElementById("perfilFotoInput");
+  const fotoPreview = document.getElementById("perfilFotoPreview");
+
+  let fotoUrlFinal = null;
+
+  try{
+    btnPerfilSave.disabled = true;
+
+    if (fotoInput && fotoInput.files && fotoInput.files.length > 0) {
+      const arr = await uploadImages([fotoInput.files[0]]);
+      fotoUrlFinal = Array.isArray(arr) && arr[0]?.url ? arr[0].url : null;
+      if (fotoPreview && fotoUrlFinal) fotoPreview.src = fotoUrlFinal;
+    } else {
+      const s = await getDoc(doc(db, "usuarios", user.uid));
+      const data = s.exists() ? s.data() : {};
+      fotoUrlFinal = data.fotoPerfil || user.photoURL || null;
+    }
+
+    await setDoc(doc(db,"usuarios",user.uid), {
+      nombre, ciudad, telefono: tel, fotoPerfil: fotoUrlFinal ?? null, actualizadoEl: serverTimestamp()
+    }, { merge:true });
+
+    const updateAuth = {};
+    if (user.displayName !== nombre) updateAuth.displayName = nombre;
+    if ((user.photoURL || null) !== (fotoUrlFinal || null)) updateAuth.photoURL = fotoUrlFinal || null;
+    if (Object.keys(updateAuth).length) await updateProfile(user, updateAuth);
+
+    if (spanNombre) spanNombre.textContent = nombre || user.email || "Usuario";
+    if (miniAvatar) { miniAvatar.src = fotoUrlFinal || "/assets/fak.PNG"; miniAvatar.alt = `Avatar de ${nombre}`; }
+    if (modalAvatar) { modalAvatar.src = fotoUrlFinal || "/assets/fak.PNG"; modalAvatar.alt = `Avatar de ${nombre}`; }
+    if (nombreCorto) nombreCorto.textContent = nombre;
+    if (nombreCortoModal) nombreCortoModal.textContent = nombre;
+
+    AUTHOR_CACHE.set(user.uid, { nombre, fotoPerfil: fotoUrlFinal || null });
+    updateAvatarsInDOM(user.uid);
+
+    const total = await propagateAuthorFieldsOnPosts(user.uid, nombre, fotoUrlFinal || null);
+    console.log(`[propagate] publicaciones actualizadas: ${total}`);
+
+    if (perfilMsg){ perfilMsg.textContent="Datos guardados."; perfilMsg.classList.remove("oculto","error"); }
+    toast("Perfil actualizado ✔");
+    closePerfilModal();
+  }catch(err){
+    console.error("Error guardando perfil:", err);
+    if (perfilMsg){ perfilMsg.textContent="No se pudieron guardar los datos."; perfilMsg.classList.remove("oculto"); perfilMsg.classList.add("error"); }
+  }finally{
+    btnPerfilSave.disabled = false;
+  }
+});
+
+/* ===== Cambiar contraseña ===== */
+passBtn?.addEventListener("click", async ()=>{
+  const user = auth.currentUser; if (!user) return;
+  const actual = passActualEl?.value || "";
+  const nueva  = passNuevaEl?.value  || "";
+  const conf   = passConfirmEl?.value|| "";
+
+  const providerIds = (user.providerData || []).map(p=>p.providerId);
+  const isEmailPass = providerIds.includes("password");
+
+  if (!isEmailPass){
+    try{
+      await sendPasswordResetEmail(auth, user.email);
+      if (passMsg){ passMsg.textContent="Se envió un correo para cambiar la contraseña."; passMsg.classList.remove("oculto","error"); }
+    }catch(e){
+      console.error(e);
+      if (passMsg){ passMsg.textContent="No se pudo enviar el correo."; passMsg.classList.remove("oculto"); passMsg.classList.add("error"); }
+    }
+    return;
+  }
+
+  if (!actual || !nueva || !conf){
+    if (passMsg){ passMsg.textContent="Completa los tres campos."; passMsg.classList.remove("oculto"); passMsg.classList.add("error"); }
+    return;
+  }
+  if (nueva !== conf){
+    if (passMsg){ passMsg.textContent="Las contraseñas nuevas no coinciden."; passMsg.classList.remove("oculto"); passMsg.classList.add("error"); }
+    return;
+  }
+  if (nueva.length < 6){
+    if (passMsg){ passMsg.textContent="La contraseña debe tener al menos 6 caracteres."; passMsg.classList.remove("oculto"); passMsg.classList.add("error"); }
+    return;
+  }
+
+  try{
+    const cred = EmailAuthProvider.credential(user.email, actual);
+    await reauthenticateWithCredential(user, cred);
+    await updatePassword(user, nueva);
+    if (passMsg){ passMsg.textContent="Contraseña actualizada."; passMsg.classList.remove("oculto","error"); }
+    passActualEl.value=""; passNuevaEl.value=""; passConfirmEl.value="";
+  }catch(err){
+    console.error(err);
+    if (passMsg){
+      passMsg.textContent = err.code==="auth/wrong-password" ? "La contraseña actual no es correcta." : "No se pudo cambiar la contraseña.";
+      passMsg.classList.remove("oculto"); passMsg.classList.add("error");
+    }
+  }
+});
+
+/* ===== Reacciones ===== */
+async function refreshReactionCount(accionId){
+  const countSpan = document.querySelector(`[data-like-count="${accionId}"]`);
+  if (!countSpan) return;
+  const q = collection(db, "acciones", accionId, "reacciones");
+  const agg = await getCountFromServer(q);
+  countSpan.textContent = String(agg.data().count || 0);
+}
+async function toggleReaction(accionId){
+  const me = auth.currentUser?.uid; if (!me) throw new Error("No auth");
+  const reactRef = doc(db, "acciones", accionId, "reacciones", me);
+  const mySnap = await getDoc(reactRef);
+  if (mySnap.exists()){ await deleteDoc(reactRef); return -1; }
+  else { await setDoc(reactRef, { uid: me, type:"like", createdAt: serverTimestamp() }); return +1; }
+}
+async function initReactionUI(accionId){
+  const me = auth.currentUser?.uid; if (!me) return;
+  const btn = document.querySelector(`[data-like="${accionId}"]`);
+  const count = document.querySelector(`[data-like-count="${accionId}"]`);
+  if (!btn || !count) return;
+  const myRef = doc(db,"acciones",accionId,"reacciones",me);
+  const mySnap = await getDoc(myRef);
+  if (mySnap.exists()) btn.classList.add("liked");
+  btn.onclick = async ()=>{
+    btn.disabled = true;
+    try{
+      const delta = await toggleReaction(accionId);
+      const n = parseInt(count.textContent || "0", 10) || 0;
+      count.textContent = String(Math.max(0, n + delta));
+      if (delta>0) btn.classList.add("liked"); else btn.classList.remove("liked");
+      await refreshReactionCount(accionId);
+    }catch(e){ console.error(e); alert("No se pudo registrar tu reacción."); }
+    finally{ btn.disabled = false; }
+  };
+}
+
+/* ===== Feed ===== */
+function showSkeletons(n=4) {
+  if (!feedEl) return;
+  feedEl.innerHTML = "";
+  for (let i=0;i<n;i++) {
+    const s = document.createElement("div");
+    s.className = "skeleton-card";
+    feedEl.appendChild(s);
+  }
+}
+function startFeedListener(){
+  if (stopFeed) stopFeed();
+  const qRef = query(collection(db,"acciones"), orderBy("creadoEl","desc"), limit(50));
+  stopFeed = onSnapshot(qRef, (snap)=>{
+    FEED_CACHE = snap.docs.map(d=>({ id:d.id, ...d.data() }));
+    FEED_CACHE.forEach(p=>{ if (p.categoria) p.categoria = norm(p.categoria); });
+    renderFeed();
+  });
+}
+function renderFeed() {
+  if (!feedEl) return;
+  feedEl.innerHTML = "";
+
+  const selected = norm(categorySelect?.value || "todas");
+  const qText    = norm(searchInput?.value || "");
+  const me       = CURRENT_UID;
+
+  const items = FEED_CACHE.filter(p => {
+    const cat   = norm(p.categoria);
+    const desc  = norm(p.descripcion);
+    const autor = norm(p.autorNombre);
+    const zona  = norm(p.zona);
+    const okCat  = selected === "todas" || cat === selected;
+    const okText = !qText || desc.includes(qText) || autor.includes(qText) || zona.includes(qText);
+    return okCat && okText;
+  });
+
+  if (items.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.textContent = "No se encontraron publicaciones con ese filtro.";
+    feedEl.appendChild(empty);
+    return;
+  }
+
+  for (const p of items) {
+    const accionId = p.id;
+    const card = document.createElement("article");
+    card.className = "post";
+
+    const aprobadoEl = p.validadoEl?.toDate?.() ? p.validadoEl.toDate().toLocaleString() : "";
+    const badge = p.validado
+      ? `<span class="badge-validado" title="Validado ${aprobadoEl}">Validado</span>`
+      : `<span class="badge-pendiente">Pendiente</span>`;
+
+    const isMine    = me && p.autorUid === me;
+    const canManage = IS_ADMIN || isMine;
+    const avatarUrl = avatarForPost(p);
+
+    const hasMedia = Array.isArray(p.media) && p.media[0];
+    const imgBlock = hasMedia
+      ? `<img class="post-img" alt="${(p.descripcion || 'Imagen').slice(0,120)}" loading="lazy">`
+      : ``;
+
+    card.innerHTML = `
+      <div class="post-head">
+        <img class="avatar" data-autor-uid="${p.autorUid || ''}" src="${avatarUrl}" alt="">
+        <div>
+          <strong>${p.autorNombre || 'Usuario'}</strong>
+          <div class="post-meta">
+            <span class="subtitulo">${p.categoria || ''}${p.zona ? ' · ' + p.zona : ''}</span>
+            ${badge}
+          </div>
+        </div>
+      </div>
+      <div class="post-body">
+        <p>${(p.descripcion || '').replace(/\n/g,'<br>')}</p>
+        ${imgBlock}
+      </div>
+      <div class="post-actions">
+        <div class="post-actions-left">
+          <button class="like-btn" data-like="${accionId}">Ecoliked 🌿</button>
+          <span class="like-count" data-like-count="${accionId}">0</span>
+        </div>
+        ${canManage ? `
+        <div class="post-actions-right">
+          <button class="edit-btn" data-edit="${accionId}">Editar</button>
+          <button class="delete-btn" data-del="${accionId}">Eliminar</button>
+        </div>` : ``}
+      </div>
+    `;
+    feedEl.appendChild(card);
+
+    if (hasMedia) {
+      const imgEl = card.querySelector(".post-img");
+      setImageForPost(imgEl, p.media[0]);
+    }
+    if (me) initReactionUI(accionId);
+    refreshReactionCount(accionId).catch(console.error);
+  }
+
+  const need = new Set(items.map(x => x.autorUid).filter(Boolean));
+  need.forEach(async (uid) => {
+    if (!AUTHOR_CACHE.has(uid)) {
+      await fetchAuthor(uid);
+      updateAvatarsInDOM(uid);
+    }
+  });
+}
+
+/* ===== Filtros texto/categoría ===== */
+let tSearch;
+categorySelect?.addEventListener("change", renderFeed);
+searchInput?.addEventListener("input", () => {
+  clearTimeout(tSearch);
+  tSearch = setTimeout(renderFeed, 200);
+});
+
+/* ===== Borrar / Editar desde Feed ===== */
+feedEl?.addEventListener("click", async (e)=>{
+  const btnDel = e.target.closest("[data-del]");
+  if (!btnDel) return;
+
+  const accionId = btnDel.getAttribute("data-del");
+  if (!accionId) return;
+
+  const confirmed = await showConfirm({ title:"Eliminar publicación", text:"Esta acción no se puede deshacer." });
+  if (!confirmed) return;
+
+  const prevTxt = btnDel.textContent;
+  btnDel.disabled = true; btnDel.textContent = "Eliminando...";
+
+  try{
+    await deleteDoc(doc(db,"acciones",accionId));
+    btnDel.closest(".post")?.remove();
+    FEED_CACHE = FEED_CACHE.filter(p=>p.id !== accionId);
+  }catch(err){
+    console.error("No se pudo eliminar la publicación:", err);
+    alert("No se pudo eliminar la publicación.");
+    btnDel.disabled = false; btnDel.textContent = prevTxt;
+  }
+});
+feedEl?.addEventListener("click", (e)=>{
+  const btnEdit = e.target.closest("[data-edit]");
+  if (!btnEdit) return;
+
+  const id = btnEdit.getAttribute("data-edit");
+  const post = FEED_CACHE.find(p=>p.id===id);
+  if (!post) return;
+
+  EDITING_ID = id;
+  EDITING_ORIG_MEDIA = Array.isArray(post.media) ? [...post.media] : [];
+  if (editDesc) editDesc.value = post.descripcion || "";
+  if (editCat)  editCat.value  = (post.categoria || "limpieza").toLowerCase();
+  if (editZona) editZona.value = post.zona || "";
+  if (editFiles) editFiles.value = "";
+  if (editPreview) editPreview.innerHTML = "";
+
+  openEditModal();
+});
+function openEditModal(){ editModal?.classList.remove("oculto"); editModal?.setAttribute("aria-hidden","false"); setTimeout(()=>editDesc?.focus(), 20); }
+function closeEditModal(){
+  editModal?.classList.add("oculto");
+  editModal?.setAttribute("aria-hidden","true");
+  EDITING_ID = null; EDITING_ORIG_MEDIA = [];
+  if (editMsg){ editMsg.classList.add("oculto"); editMsg.classList.remove("error"); editMsg.textContent=""; }
+  if (editForm) editForm.reset();
+  if (editPreview) editPreview.innerHTML = "";
+}
+editCancel?.addEventListener("click", closeEditModal);
+editModal?.addEventListener("click", (e)=>{ if (e.target===editModal) closeEditModal(); });
+editFiles?.addEventListener("change", ()=>{
+  editPreview.innerHTML = "";
+  const files = Array.from(editFiles.files || []);
+  files.slice(0,4).forEach((f,i)=>{
+    const url = URL.createObjectURL(f);
+    const card = document.createElement("div");
+    card.className="thumb";
+    card.innerHTML = `<img src="${url}" alt="new ${i+1}">`;
+    editPreview.appendChild(card);
+  });
+});
+editSave?.addEventListener("click", async ()=>{
+  const user = auth.currentUser; if (!user || !EDITING_ID) return;
+
+  const descripcion = (editDesc?.value || "").trim();
+  const categoria   = (editCat?.value  || "limpieza").toLowerCase();
+  const zona        = (editZona?.value || "").trim();
+  if (!descripcion){
+    if (editMsg){ editMsg.textContent="La descripción es obligatoria."; editMsg.classList.remove("oculto"); editMsg.classList.add("error"); }
+    return;
+  }
+
+  try{
+    editSave.disabled=true; editSave.textContent="Guardando...";
+    let mediaFinal = EDITING_ORIG_MEDIA;
+    const files = Array.from(editFiles?.files || []);
+    if (files.length>0){ mediaFinal = await uploadImages(files); }
+
+    await updateDoc(doc(db,"acciones",EDITING_ID), {
+      descripcion, categoria, zona: zona || null, media: mediaFinal, actualizadoEl: serverTimestamp()
+    });
+
+    const idx = FEED_CACHE.findIndex(p=>p.id===EDITING_ID);
+    if (idx>=0){
+      FEED_CACHE[idx] = { ...FEED_CACHE[idx], descripcion, categoria, zona: zona || null, media: mediaFinal };
+      renderFeed();
+    }
+    closeEditModal();
+  }catch(err){
+    console.error("No se pudo actualizar la publicación:", err);
+    if (editMsg){ editMsg.textContent="No se pudo guardar."; editMsg.classList.remove("oculto"); editMsg.classList.add("error"); }
+  }finally{
+    editSave.disabled=false; editSave.textContent="Guardar";
+  }
+});
+
+/* ===== Composer UI extras ===== */
+descEl?.addEventListener("input", ()=>{
+  const n = descEl.value.length; if (charCount) charCount.textContent = `${n}/500`;
+});
+const MAX_FILES=4;
+fileInput?.addEventListener("change", ()=>{
+  if (!preview) return;
+  preview.innerHTML="";
+  const files = Array.from(fileInput.files || []);
+  if (hintFiles){
+    if (files.length>MAX_FILES){ hintFiles.textContent = `Máximo ${MAX_FILES} imágenes`; hintFiles.style.color="#c0392b"; }
+    else { hintFiles.textContent = "Hasta 4 imágenes (JPG/PNG/WEBP)"; hintFiles.style.color=""; }
+  }
+  files.slice(0,MAX_FILES).forEach((f,idx)=>{
+    const url = URL.createObjectURL(f);
+    const card = document.createElement("div");
+    card.className="thumb";
+    card.innerHTML = `<img src="${url}" alt="preview ${idx+1}" />`;
+    preview.appendChild(card);
+  });
+});
+</script>
+
+
+</body>
+
+</html>
