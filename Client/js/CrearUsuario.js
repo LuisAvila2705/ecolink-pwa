@@ -29,7 +29,7 @@ const errEmail    = $("#err-email");
 const errEmail2   = $("#err-email2");
 const errPassword = $("#err-password");
 const errTelefono = $("#err-telefono");
-const errCiudad   = $("#err-ciudad");   // 👈 (opcional en tu HTML)
+const errCiudad   = $("#err-ciudad");   // (opcional en tu HTML)
 const errAcepta   = $("#err-acepta");
 
 const meter = $("#pwd-meter");
@@ -117,7 +117,7 @@ function validateEmails(){
   return ok;
 }
 
-/* 👇 Teléfono: obligatorio, solo dígitos, exactamente 10 */
+/*  Teléfono: obligatorio, solo dígitos, exactamente 10 */
 function validateTelefono(){
   const t = (inputTelefono?.value || "").trim();
   if (!reTelefono.test(t)) {
@@ -128,7 +128,7 @@ function validateTelefono(){
   return true;
 }
 
-/* 👇 Ciudad/municipio: obligatorio (dropdown) */
+/*  Ciudad/municipio: obligatorio (dropdown) */
 function validateCiudad(){
   const v = (inputCiudad?.value || "").trim();
   if (!v) {
@@ -168,8 +168,8 @@ function updateSubmitState(){
   const ok =
     validateNombre() &
     validateEmails() &
-    validateTelefono() &     // 👈 ahora obligatorio
-    validateCiudad() &       // 👈 nuevo
+    validateTelefono() &     //  ahora obligatorio
+    validateCiudad() &       //  nuevo
     validatePassword() &
     validateAcepta();
   if (btn) btn.disabled = !ok;
@@ -254,8 +254,8 @@ inputFoto?.addEventListener("change", () => {
     organizacion: null,
     telefono: (inputTelefono.value || "").trim(), // 10 dígitos
     ciudad: (inputCiudad.value || "").trim(),      // municipio NL
-    fotoPerfil: fotoPerfilUrl,                     // 👈 guardamos la URL (o null)
-    fotoPerfilPublicId: fotoPerfilPublicId,        // 👈 útil para borrar/actualizar después
+    fotoPerfil: fotoPerfilUrl,                     // guardamos la URL (o null)
+    fotoPerfilPublicId: fotoPerfilPublicId,        // útil para borrar/actualizar después
     creadoEl: serverTimestamp(),
     ultimaConexion: serverTimestamp(),
     estadoCuenta: "activo",
