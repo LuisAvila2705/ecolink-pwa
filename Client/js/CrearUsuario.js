@@ -12,6 +12,7 @@ import {
 import { uploadImages } from "./uploaderCloudinary.js";
 
 const $ = (s) => document.querySelector(s);
+
 const form = $("#registroForm");
 const btn = $("#btnCrear");
 const msg = $("#msg");
@@ -29,7 +30,7 @@ const errNombre = $("#err-nombre");
 const errEmail = $("#err-email");
 const errEmail2 = $("#err-email2");
 const errPassword = $("#err-password");
-const errTelefono = $("#err-telefono");
+const errTelefono = $("#err-telefono"); // si no existen en HTML, no pasa nada
 const errCiudad = $("#err-ciudad");
 const errAcepta = $("#err-acepta");
 
@@ -40,7 +41,7 @@ const inputFoto = $("#foto");
 const hintFoto = $("#hintFoto");
 const fotoPreview = $("#fotoPreview");
 
-// ================== Password helpers ==================
+// ================== Utilidades ==================
 
 const BAD_PASSWORDS = new Set([
   "password",
@@ -74,11 +75,9 @@ function showMessage(text, type = "info") {
 function setError(input, errEl, text) {
   if (!input || !errEl) return;
   errEl.textContent = text || "";
-  input.classList.toggle("error", !!text);
-  input.classList.toggle(
-    "ok",
-    !text && (input.value || "").trim().length > 0
-  );
+  const hasError = !!text;
+  input.classList.toggle("error", hasError);
+  input.classList.toggle("ok", !hasError && input.value.trim().length > 0);
 }
 
 // Validaciones
@@ -142,10 +141,10 @@ function validateEmails() {
   } else {
     setError(inputEmail2, errEmail2, "");
   }
+
   return ok;
 }
 
-/* Teléfono: obligatorio, solo dígitos, exactamente 10 */
 function validateTelefono() {
   const t = (inputTelefono?.value || "").trim();
   if (!reTelefono.test(t)) {
@@ -156,7 +155,6 @@ function validateTelefono() {
   return true;
 }
 
-/* Ciudad/municipio: obligatorio */
 function validateCiudad() {
   const v = (inputCiudad?.value || "").trim();
   if (!v) {
@@ -187,8 +185,8 @@ function validatePassword() {
 
 function validateAcepta() {
   if (!inputAcepta?.checked) {
-    if (errAcepta)
-      errAcepta.textContent = "Debes aceptar términos y privacidad.";
+    if (errAcepta) errAcepta.textContent =
+      "Debes aceptar términos y privacidad.";
     return false;
   }
   if (errAcepta) errAcepta.textContent = "";
@@ -196,13 +194,13 @@ function validateAcepta() {
 }
 
 function updateSubmitState() {
-  const ok =
-    validateNombre() &
-    validateEmails() &
-    validateTelefono() &
-    validateCiudad() &
-    validatePassword() &
-    validateAcepta();
+  const v1 = validateNombre();
+  const v2 = validateEmails();
+  const v3 = validateTelefono();
+  const v4 = validateCiudad();
+  const v5 = validatePassword();
+  const v6 = validateAcepta();
+  const ok = v1 && v2 && v3 && v4 && v5 && v6;
   if (btn) btn.disabled = !ok;
 }
 
@@ -216,7 +214,7 @@ inputTelefono?.addEventListener("input", () => {
   updateSubmitState();
 });
 
-// Validación en vivo
+// Validaciones en vivo
 [
   inputNombre,
   inputEmail,
@@ -226,10 +224,10 @@ inputTelefono?.addEventListener("input", () => {
   inputCiudad,
 ].forEach((el) => el?.addEventListener("input", updateSubmitState));
 
-// Password meter
+// password meter
 inputPassword?.addEventListener("input", updatePwdMeter);
 
-// ✅ Preview de foto (fuera del submit)
+// Preview en vivo de foto (fuera del submit, para que funcione siempre)
 inputFoto?.addEventListener("change", () => {
   const f = inputFoto.files?.[0];
   if (!f) {
@@ -254,10 +252,13 @@ inputFoto?.addEventListener("change", () => {
     hintFoto.textContent = "JPG/PNG · máx. 4 MB";
     hintFoto.style.color = "";
   }
+
   const url = URL.createObjectURL(f);
   if (fotoPreview) {
     fotoPreview.src = url;
     fotoPreview.style.display = "block";
+    fotoPreview.style.maxWidth = "140px";
+    fotoPreview.style.maxHeight = "140px";
   }
 });
 
@@ -288,19 +289,20 @@ form?.addEventListener("submit", async (e) => {
       displayName: (inputNombre.value || "").trim(),
     });
 
-    // 3) Subir foto de perfil a Cloudinary (si existe)
+    // 3) Subida opcional de foto de perfil a Cloudinary
     let fotoPerfilUrl = null;
     let fotoPerfilPublicId = null;
+    const fotoFile = inputFoto?.files?.[0];
 
-    if (inputFoto?.files && inputFoto.files.length > 0) {
-      const uploaded = await uploadImages(inputFoto.files);
+    if (fotoFile) {
+      const uploaded = await uploadImages([fotoFile]); // usa tu helper
       if (uploaded && uploaded[0]) {
         fotoPerfilUrl = uploaded[0].url;
         fotoPerfilPublicId = uploaded[0].publicId;
       }
     }
 
-    // 4) Guardar en Firestore
+    // 4) Guardar datos en Firestore -> colección "usuarios"
     await setDoc(doc(db, "usuarios", user.uid), {
       uid: user.uid,
       email: user.email.toLowerCase(),
@@ -317,7 +319,8 @@ form?.addEventListener("submit", async (e) => {
     });
 
     showMessage("Cuenta creada con éxito ✅", "success");
-    window.location.href = "DashboardPrincipal.html";
+    // ruta absoluta por claridad
+    window.location.href = "/DashboardPrincipal.html";
   } catch (err) {
     console.error(err);
     const code = err.code || "";

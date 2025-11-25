@@ -68,8 +68,8 @@ header {
 /* ----------- FORMULARIO DE CREACIÓN ----------- */
 .formulario-creacion {
   padding: 2rem;
-  max-width: 800px;
-  margin: auto;
+  max-width: 480px;          /* más estrecho para que no se vea tan gigante */
+  margin: 2rem auto;
   text-align: center;
 }
 
@@ -180,10 +180,50 @@ header {
   }
 }
 
+/* Medidor de contraseña y errores */
+.pwd-meter {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.pwd-bar {
+  height: 100%;
+  width: 0%;
+  background: #ef4444;
+  transition: width .25s ease, background .25s ease;
+  border-radius: 6px;
+}
+.err {
+  color: #b91c1c;
+  min-height: 1.1em;
+  display: block;
+}
+.ok {
+  border-color: #16a34a !important;
+}
+.error {
+  border-color: #b91c1c !important;
+}
 
-.pwd-meter{height:8px;background:#e2e8f0;border-radius:6px;margin-top:6px;overflow:hidden}
-.pwd-bar{height:100%;width:0%;background:#ef4444;transition:width .25s ease, background .25s ease;border-radius:6px}
-.err{color:#b91c1c;min-height:1.1em;display:block}
-.ok{border-color:#16a34a!important}
-.error{border-color:#b91c1c!important}
+/* ========= Preview de foto de perfil ========= */
 
+.formulario-creacion .preview {
+  margin-top: 8px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Forzamos tamaño pequeño del avatar,
+   aunque haya reglas globales de img { max-width: 100%; } */
+.formulario-creacion .preview img {
+  max-width: 140px;
+  max-height: 140px;
+  width: auto;
+  height: auto;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid #e6efec;
+  display: block;
+}
