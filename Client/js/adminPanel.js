@@ -157,7 +157,8 @@ function renderTable() {
     const uid    = d.id;
     const nombre = u.nombre || "";
     const email  = u.email || "";
-    const foto   = u.fotoPerfil || "/assets/paciente.PNG";
+    // 🔹 Ruta corregida (minúscula) para evitar 404 en Linux/Render
+    const foto   = u.fotoPerfil || "/assets/fak.png";
     const rol    = (u.rol || "ciudadano").toLowerCase();
     const mun    = u.ciudad || "";
     const estado = u.estadoCuenta || "activo";
@@ -349,26 +350,47 @@ document.addEventListener("click", async (e)=>{
           const fd = new FormData(form);
           const payload = {
             uid,
-            nombre: (fd.get("nombre")||"").toString().trim(),
-            ciudad: (fd.get("ciudad")||"").toString().trim() || null,
-            telefono: (fd.get("telefono")||"").toString().trim() || null,
+            nombre:  (fd.get("nombre")  || "").toString().trim(),
+            ciudad:  (fd.get("ciudad")  || "").toString().trim() || null,
+            telefono:(fd.get("telefono")|| "").toString().trim() || null,
           };
           if (!payload.nombre) return;
 
           try{
-            const idToken = await auth.currentUser.getIdToken();
+            const user = auth.currentUser;
+            if (!user) {
+              throw new Error("Tu sesión ha expirado, vuelve a iniciar sesión.");
+            }
+
+            // 🔹 Forzamos refresco del token para evitar "token inválido o expirado"
+            const idToken = await user.getIdToken(true);
+
             const resp = await fetch("/api/admin/updateUser", {
               method:"POST",
-              headers:{ "Content-Type":"application/json", Authorization:`Bearer ${idToken}` },
+              headers:{
+                "Content-Type":"application/json",
+                "Authorization":`Bearer ${idToken}`
+              },
               body: JSON.stringify(payload)
             });
-            if (!resp.ok) throw new Error((await resp.json()).error || "Fallo actualización");
+
+            if (resp.status === 401) {
+              const data = await resp.json().catch(()=>({}));
+              const msg = data.error || "Token inválido o expirado. Vuelve a iniciar sesión.";
+              throw new Error(msg);
+            }
+
+            if (!resp.ok) {
+              const data = await resp.json().catch(()=>({}));
+              throw new Error(data.error || "Fallo actualización");
+            }
+
             showToast("Usuario actualizado.");
             closeAnyModal();
             await loadPage({ reset:true });
           }catch(e){
             console.error(e);
-            alert("No se pudo guardar.");
+            alert(e.message || "No se pudo guardar.");
           }
         };
       }
