@@ -1,9 +1,8 @@
-// /js/adminPanel.js  (versión estable)
+// /js/adminPanel.js  (versión estable + fix token refresco)
 // - Lista, filtros, paginación
 // - Ver publicaciones (modal) => Firestore
 // - Editar usuario (modal) => /api/admin/updateUser
 // - Crear usuario (modal) => /api/admin/createUser
-// - SIN Broadcast
 
 import { auth, db } from "/js/firebase.js";
 import {
@@ -13,6 +12,20 @@ import {
 import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 const $ = (s) => document.querySelector(s);
+
+// ================== Token fresco garantizado ==================
+async function getFreshToken() {
+  const user = auth.currentUser;
+  if (!user) throw new Error("No hay usuario autenticado.");
+
+  try {
+    // true = fuerza refresco si ya expiró
+    return await user.getIdToken(true);
+  } catch (err) {
+    console.error("Error obteniendo token fresco:", err);
+    throw err;
+  }
+}
 
 // Top bar / filtros
 const qInput   = $("#q");
@@ -27,7 +40,7 @@ const statsEl  = $("#stats");
 
 // Sub-acciones
 const btnExportCsv  = $("#exportCsv");
-const btnCreateUser = $("#createUser"); // SIN Broadcast
+const btnCreateUser = $("#createUser");
 
 // Toast
 const toastEl  = $("#toast");
@@ -157,8 +170,7 @@ function renderTable() {
     const uid    = d.id;
     const nombre = u.nombre || "";
     const email  = u.email || "";
-    // 🔹 Ruta corregida (minúscula) para evitar 404 en Linux/Render
-    const foto   = u.fotoPerfil || "/assets/fak.png";
+    const foto   = u.fotoPerfil || "/assets/paciente.PNG";
     const rol    = (u.rol || "ciudadano").toLowerCase();
     const mun    = u.ciudad || "";
     const estado = u.estadoCuenta || "activo";
@@ -350,47 +362,29 @@ document.addEventListener("click", async (e)=>{
           const fd = new FormData(form);
           const payload = {
             uid,
-            nombre:  (fd.get("nombre")  || "").toString().trim(),
-            ciudad:  (fd.get("ciudad")  || "").toString().trim() || null,
-            telefono:(fd.get("telefono")|| "").toString().trim() || null,
+            nombre: (fd.get("nombre")||"").toString().trim(),
+            ciudad: (fd.get("ciudad")||"").toString().trim() || null,
+            telefono: (fd.get("telefono")||"").toString().trim() || null,
           };
           if (!payload.nombre) return;
 
           try{
-            const user = auth.currentUser;
-            if (!user) {
-              throw new Error("Tu sesión ha expirado, vuelve a iniciar sesión.");
-            }
-
-            // 🔹 Forzamos refresco del token para evitar "token inválido o expirado"
-            const idToken = await user.getIdToken(true);
-
+            const idToken = await getFreshToken();
             const resp = await fetch("/api/admin/updateUser", {
               method:"POST",
-              headers:{
-                "Content-Type":"application/json",
-                "Authorization":`Bearer ${idToken}`
+              headers:{ 
+                "Content-Type":"application/json", 
+                "Authorization": `Bearer ${idToken}` 
               },
               body: JSON.stringify(payload)
             });
-
-            if (resp.status === 401) {
-              const data = await resp.json().catch(()=>({}));
-              const msg = data.error || "Token inválido o expirado. Vuelve a iniciar sesión.";
-              throw new Error(msg);
-            }
-
-            if (!resp.ok) {
-              const data = await resp.json().catch(()=>({}));
-              throw new Error(data.error || "Fallo actualización");
-            }
-
+            if (!resp.ok) throw new Error((await resp.json()).error || "Fallo actualización");
             showToast("Usuario actualizado.");
             closeAnyModal();
             await loadPage({ reset:true });
           }catch(e){
             console.error(e);
-            alert(e.message || "No se pudo guardar.");
+            alert("No se pudo guardar.");
           }
         };
       }
@@ -450,8 +444,8 @@ btnExportCsv?.addEventListener("click", ()=>{
 });
 
 /* =========================== CREAR USUARIO ============================ */
-document.getElementById("createUser")?.addEventListener("click", () => {
-  const html = `
+btnCreateUser?.addEventListener("click", () => {
+  const bodyHTML = `
     <form id="cuForm" class="form-grid" autocomplete="off" novalidate>
       <label>Nombre
         <input id="cuNombre" type="text" required placeholder="Nombre y apellidos">
@@ -476,46 +470,54 @@ document.getElementById("createUser")?.addEventListener("click", () => {
       <div id="cuErr" class="perfil-msg oculto"></div>
 
       <div class="modal-actions">
-        <button type="button" class="btn-light" id="cuCancel">Cancelar</button>
+        <button type="button" class="btn-light" data-close>Cancelar</button>
         <button type="submit" class="btn-primary">Crear</button>
       </div>
     </form>
   `;
-  const modal = openSimpleModal({
+
+  openModal({
     title: "Crear usuario",
-    bodyHTML: html,
-    onReady: (m) => {
-      const $ = (sel)=> m.querySelector(sel);
-      $("#cuCancel").onclick = () => closeAnyModal(modal);
-      $("#cuForm").onsubmit = async (ev) => {
+    bodyHTML,
+    onOpen(mod) {
+      const q = (sel) => mod.querySelector(sel);
+      const form   = q("#cuForm");
+      const errBox = q("#cuErr");
+
+      form.onsubmit = async (ev) => {
         ev.preventDefault();
-        const nombre = $("#cuNombre").value.trim();
-        const email  = $("#cuEmail").value.trim().toLowerCase();
-        const pass   = $("#cuPass").value;
-        const rol    = $("#cuRol").value;
-        const ciudad = $("#cuCiudad").value.trim() || null;
-        const errBox = $("#cuErr");
+        const nombre = q("#cuNombre").value.trim();
+        const email  = q("#cuEmail").value.trim().toLowerCase();
+        const pass   = q("#cuPass").value;
+        const rol    = q("#cuRol").value;
+        const ciudad = q("#cuCiudad").value.trim() || null;
 
         if (!nombre || !email || pass.length < 6) {
           errBox.textContent = "Completa nombre/correo y una contraseña de mínimo 6 caracteres.";
           errBox.classList.remove("oculto");
           return;
         }
+
         try {
-          const idToken = await getIdToken();
+          const idToken = await getFreshToken();
           const resp = await fetch("/api/admin/createUser", {
             method: "POST",
-            headers: { "Content-Type":"application/json", "Authorization": `Bearer ${idToken}` },
+            headers: {
+              "Content-Type":"application/json",
+              "Authorization": `Bearer ${idToken}`
+            },
             body: JSON.stringify({ nombre, email, password: pass, rol, ciudad })
           });
+
           if (!resp.ok) {
             const { error } = await resp.json().catch(()=>({error:"Error"}));
             throw new Error(error || `HTTP ${resp.status}`);
           }
           showToast("Usuario creado.");
-          closeAnyModal(modal);
+          closeAnyModal();
           await loadPage({ reset:true });
         } catch (e) {
+          console.error(e);
           errBox.textContent = "No se pudo crear: " + (e.message || e);
           errBox.classList.remove("oculto");
         }
