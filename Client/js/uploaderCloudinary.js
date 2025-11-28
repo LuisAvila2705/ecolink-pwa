@@ -4,7 +4,7 @@ const MAX_FILES = 4;
 const MAX_MB = 3;
 const ALLOWED = ["image/jpeg", "image/png", "image/webp"];
 
-// 🔴 AJUSTA ESTOS DOS SI ALGÚN DÍA CAMBIAN EN CLOUDINARY
+// AJUSTA ESTOS DOS SI ALGÚN DÍA CAMBIAN EN CLOUDINARY
 const CLOUD_NAME = "dxlfgnxa3";     // tu cloud_name de Cloudinary
 const UPLOAD_PRESET = "EcoLink";    // nombre EXACTO del preset unsigned
 
@@ -22,7 +22,7 @@ export async function uploadImages(files) {
     }
   }
 
-  // ✅ YA NO PEDIMOS FIRMA AL BACKEND
+  // YA NO PEDIMOS FIRMA AL BACKEND
   // Subimos directamente usando upload_preset unsigned
   const out = [];
 
